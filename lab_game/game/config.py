@@ -15,17 +15,22 @@ WINDOW_WIDTH = int(os.environ.get("LAB_GAME_WIDTH", CANVAS_WIDTH))
 WINDOW_HEIGHT = int(os.environ.get("LAB_GAME_HEIGHT", CANVAS_HEIGHT))
 
 # --- Colors --------------------------------------------------------------
+# A bright, clean "science classroom" palette: bold navy outlines and flat
+# saturated colors, like classroom clip-art beakers, instead of a dim
+# moody background -- it reads more like a lab and less like a potion den.
 WHITE = (255, 255, 255)
 BLACK = (20, 20, 25)
-BG_TOP = (30, 20, 70)
-BG_BOTTOM = (70, 30, 110)
-BENCH_COLOR = (120, 80, 60)
-GLASS_COLOR = (210, 230, 235)
-GLASS_OUTLINE = (255, 255, 255)
-PANEL_BG = (40, 30, 80)
-TEXT_COLOR = (255, 255, 255)
-GOOD_COLOR = (90, 230, 140)
-BAD_COLOR = (255, 120, 120)
+NAVY = (36, 42, 94)
+BG_TOP = (214, 240, 255)
+BG_BOTTOM = (179, 222, 250)
+BENCH_COLOR = (223, 229, 235)
+BENCH_EDGE = (169, 181, 194)
+GLASS_COLOR = (240, 248, 252)
+GLASS_OUTLINE = NAVY
+PANEL_BG = (255, 255, 255)
+TEXT_COLOR = NAVY
+GOOD_COLOR = (70, 200, 120)
+BAD_COLOR = (235, 90, 90)
 GO_BUTTON_COLOR = (255, 90, 90)
 GO_BUTTON_GLOW = (255, 180, 120)
 
