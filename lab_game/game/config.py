@@ -113,3 +113,15 @@ HINT_AFTER_FAILURES = 3
 HUB_MOVE_SPEED = 230.0  # pixels/second on the logical canvas
 JOYSTICK_AXIS_DEADZONE = 0.25
 PLAYER_RADIUS = 16
+
+# An analog (VRx/VRy/SW) joystick module can't be read by the Pi's GPIO
+# pins directly -- they're digital-only -- so an Arduino or ESP32 reads
+# it and relays the result over USB serial instead (see
+# arduino/joystick_bridge/ and game/serial_joystick.py). This is only
+# used when enabled and a board is actually plugged in; otherwise it's
+# silently skipped, same as GPIO.
+SERIAL_JOYSTICK_ENABLED = os.environ.get("LAB_GAME_SERIAL_JOYSTICK", "1") != "0"
+# Leave unset to auto-detect the first /dev/ttyACM*/ttyUSB* found, or set
+# LAB_GAME_SERIAL_PORT to force a specific one (e.g. "/dev/ttyACM0").
+SERIAL_JOYSTICK_PORT = os.environ.get("LAB_GAME_SERIAL_PORT")
+SERIAL_JOYSTICK_BAUD = 115200  # must match the baud rate in the .ino sketch

@@ -1,10 +1,11 @@
-"""Unifies keyboard, game controller, and Raspberry Pi GPIO buttons into
-one small stream of game actions: ("drop", chem_index), ("go",),
-("reset",), ("back",), ("quit",).
+"""Unifies keyboard, game controller, Raspberry Pi GPIO buttons, and an
+Arduino/ESP32-relayed analog joystick into one small stream of game
+actions: ("drop", chem_index), ("go",), ("reset",), ("back",), ("quit",).
 
 The rest of the game never has to know whether a kid pressed the "1" key,
-squeezed a button on a USB gamepad, or mashed a big red arcade button
-wired to a GPIO pin -- it all turns into the same actions here.
+squeezed a button on a USB gamepad, mashed a big red arcade button wired
+to a GPIO pin, or clicked in an analog joystick relayed over serial by a
+microcontroller -- it all turns into the same actions here.
 
 Walking around the hub building needs continuous movement, not a single
 press, so that's handled separately by get_move_vector() instead of
@@ -15,6 +16,7 @@ import queue
 import pygame
 
 from . import config
+from .serial_joystick import SerialJoystick
 
 
 class InputManager:
@@ -24,6 +26,10 @@ class InputManager:
         self._gpio_buttons = []
         self._init_joysticks()
         self._init_gpio()
+        # Reuses self._queue: the serial reader thread pushes ("back",)
+        # directly onto it when the joystick's own button (SW) is clicked,
+        # the same way a GPIO button's when_pressed callback does.
+        self._serial_joystick = SerialJoystick(self._queue)
 
     # -- setup ------------------------------------------------------------
     def _init_joysticks(self):
@@ -101,6 +107,10 @@ class InputManager:
                 dx += hx
                 dy -= hy  # hat's y-axis is 1 = up, opposite of screen y
 
+        sdx, sdy = self._serial_joystick.get_vector()
+        dx += sdx
+        dy += sdy
+
         magnitude = (dx * dx + dy * dy) ** 0.5
         if magnitude > 1.0:
             dx /= magnitude
@@ -155,6 +165,7 @@ class InputManager:
         return None
 
     def close(self):
+        self._serial_joystick.close()
         for btn in self._gpio_buttons:
             try:
                 btn.close()

@@ -14,7 +14,9 @@ mini-games -- see **Adding a new lab room** below.
 Built with Python + [pygame](https://www.pygame.org/), runs on a
 Raspberry Pi (tested design target: Pi 4 / Pi 5, should also run fine on
 a Pi Zero 2 W), and can be played with a keyboard, a USB/Bluetooth game
-controller, or real push-buttons wired to the Pi's GPIO pins.
+controller, real push-buttons wired to the Pi's GPIO pins, or an analog
+joystick relayed through an Arduino or ESP32 (see **Using an analog
+joystick (via Arduino/ESP32)** below).
 
 ## How to play
 
@@ -194,6 +196,63 @@ while True:
 "
 ```
 
+### Using an analog joystick (via Arduino/ESP32)
+
+A classic analog joystick breakout board (labeled GND, +5V, VRx, VRy,
+SW -- the kind with two round dials and a center click button, often
+sold under names like "Xinda" or just "KY-023") can't be wired to the
+Pi's GPIO pins directly: VRx and VRy are analog voltages, and GPIO pins
+can only read digital on/off signals. If you have a spare Arduino
+(Uno/Nano/Mega/etc.) or ESP32, it can act as the translator, since both
+have a built-in analog-to-digital converter the Pi doesn't.
+
+**1. Wire the joystick to the Arduino/ESP32** (not the Pi):
+
+| Joystick pin | Goes to |
+| --- | --- |
+| GND | board GND |
+| +5V | board 5V (or 3V3 on a 3.3V-only board -- these modules work fine down to 3.3V) |
+| VRx | board A0 |
+| VRy | board A1 |
+| SW | board pin 2 |
+
+**2. Flash the sketch**: open `arduino/joystick_bridge/joystick_bridge.ino`
+in the Arduino IDE, select your board under **Tools → Board**, and
+upload. It works unmodified on both AVR Arduinos and ESP32 boards.
+
+> **Arduino Nano note**: if you get an upload error like "programmer is
+> not responding," try **Tools → Processor → "ATmega328P (Old
+> Bootloader)"** -- common on Nano clones.
+
+**3. Plug it into the Pi via USB cable.** That's it for wiring -- the
+sketch just prints readings over the same USB cable used to power/flash
+it; there's no separate connection to the Pi's GPIO pins at all.
+
+**4. Install pyserial and run the game** (already in `requirements.txt`):
+
+```bash
+pip install -r requirements.txt
+python3 main.py
+```
+
+You should see `[input] Arduino/ESP32 joystick bridge found on /dev/ttyACM0`
+(or `/dev/ttyUSB0`) printed at startup. If it instead says it couldn't
+find one, double check the board actually uploaded successfully (its
+onboard LED usually blinks right after upload) and that no other program
+(like the Arduino IDE's Serial Monitor) is already holding the port open.
+
+If you have more than one USB-serial device plugged in and it picks the
+wrong one, force a specific port:
+
+```bash
+LAB_GAME_SERIAL_PORT=/dev/ttyACM0 python3 main.py
+```
+
+The joystick's own click button (SW) is already wired to the same
+"back to hallway" action as the grey GPIO button and Backspace key, so
+clicking the stick in also leaves a room -- no extra wiring needed for
+that.
+
 ### Auto-start on boot (kiosk mode)
 
 So the Pi boots straight into the game, a systemd service is included in
@@ -251,10 +310,15 @@ lab_game/
   run.sh                launcher with fullscreen size baked in
   requirements.txt
   systemd/lab-game.service
+  arduino/
+    joystick_bridge/joystick_bridge.ino   relays an analog joystick to the
+                                           Pi over USB serial (Arduino/ESP32)
   game/
     config.py           colors, control mappings, difficulty knobs
-    input_manager.py    keyboard + controller + GPIO -> unified actions,
-                         plus continuous movement for walking the hub
+    input_manager.py    keyboard + controller + GPIO + serial joystick ->
+                         unified actions, plus continuous movement for
+                         walking the hub
+    serial_joystick.py  reads the Arduino/ESP32 joystick bridge over USB
     world.py            top-level orchestrator: hub vs. chemistry room
                          vs. a "coming soon" placeholder room
     hub.py              the building: rooms, walls, the walking player
