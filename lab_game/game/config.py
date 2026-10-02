@@ -35,12 +35,17 @@ GO_BUTTON_COLOR = (255, 90, 90)
 GO_BUTTON_GLOW = (255, 180, 120)
 
 # One entry per chemical slot. Only the first N (len of a level's bottles)
-# are used on screen. Feel free to add more colors/names here.
+# are used on screen. Order matters: it's index-matched to every control
+# mapping below (KEYBOARD_DROP_KEYS, JOYSTICK_DROP_BUTTONS,
+# GPIO_DROP_PINS), so chemical 0 is always whatever button/pin is
+# assigned to slot 0, etc. This order (red, blue, green, yellow) is
+# meant to match a physical button pack wired left to right in that
+# same order.
 CHEMICALS = [
-    {"name": "Ruby Bubbles", "color": (235, 60, 70)},
-    {"name": "Blueberry Fizz", "color": (60, 120, 235)},
-    {"name": "Goo Green", "color": (90, 200, 90)},
-    {"name": "Sunshine Splash", "color": (250, 210, 60)},
+    {"name": "Ruby Bubbles", "color": (235, 60, 70)},       # 0: red button
+    {"name": "Blueberry Fizz", "color": (60, 120, 235)},    # 1: blue button
+    {"name": "Goo Green", "color": (90, 200, 90)},          # 2: green button
+    {"name": "Sunshine Splash", "color": (250, 210, 60)},   # 3: yellow button
 ]
 
 MAX_DROPS_PER_CHEMICAL = 6
@@ -72,10 +77,18 @@ JOYSTICK_RESET_BUTTON = 5
 # external resistor for a simple push button. This is only used when
 # gpiozero + real GPIO hardware are available; otherwise it's silently
 # skipped so the game still runs fine from a keyboard on a laptop.
+#
+# Matches a 6-button colored pack wired left to right as:
+#   red, blue, green, yellow, white, black   (grey left spare/unused)
 GPIO_ENABLED = os.environ.get("LAB_GAME_GPIO", "1") != "0"
-GPIO_DROP_PINS = {0: 17, 1: 27, 2: 22, 3: 23}
-GPIO_GO_PIN = 24
-GPIO_RESET_PIN = 25
+GPIO_DROP_PINS = {
+    0: 17,  # red button    -> chemical 0 (Ruby Bubbles)
+    1: 27,  # blue button   -> chemical 1 (Blueberry Fizz)
+    2: 22,  # green button  -> chemical 2 (Goo Green)
+    3: 23,  # yellow button -> chemical 3 (Sunshine Splash)
+}
+GPIO_GO_PIN = 24     # white button -> GO / mix
+GPIO_RESET_PIN = 25  # black button -> reset the beaker
 GPIO_BOUNCE_TIME = 0.05  # seconds, debounces noisy physical buttons
 
 # --- Misc ---------------------------------------------------------------

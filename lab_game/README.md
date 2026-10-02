@@ -29,13 +29,20 @@ controller, or real push-buttons wired to the Pi's GPIO pins.
 
 | Action | Keyboard | Game controller | GPIO (Pi button) |
 | --- | --- | --- | --- |
-| Drop chemical 1 (red) | `1` | button 0 | BCM 17 |
-| Drop chemical 2 (blue) | `2` | button 1 | BCM 27 |
-| Drop chemical 3 (green) | `3` | button 2 | BCM 22 |
-| Drop chemical 4 (yellow) | `4` | button 3 | BCM 23 |
-| GO! | `space` | button 4 | BCM 24 |
-| Reset beaker | `r` | button 5 | BCM 25 |
+| Drop red chemical | `1` | button 0 | BCM 17 -- **red** button |
+| Drop blue chemical | `2` | button 1 | BCM 27 -- **blue** button |
+| Drop green chemical | `3` | button 2 | BCM 22 -- **green** button |
+| Drop yellow chemical | `4` | button 3 | BCM 23 -- **yellow** button |
+| GO! | `space` | button 4 | BCM 24 -- **white** button |
+| Reset beaker | `r` | button 5 | BCM 25 -- **black** button |
 | Quit | `esc` | -- | -- |
+
+This matches a colored 6-button pack wired left to right as red, blue,
+green, yellow, white, black -- each color button always controls the
+chemical of the same color, since `game/config.py`'s `CHEMICALS` list and
+`GPIO_DROP_PINS` are both ordered red/blue/green/yellow. A leftover grey
+button isn't wired to anything by default; see **Using the spare grey
+button** below if you'd like to give it a job.
 
 All three input methods work at the same time, so you can test with a
 keyboard before wiring anything up. Edit `game/config.py` to change any
@@ -80,9 +87,11 @@ Useful environment variables:
 
 ### Wiring physical push-buttons (GPIO)
 
-You need up to 6 momentary push-buttons (arcade buttons work great and
-are easy for small hands): 4 colored ones matching the chemicals, 1 big
-button for GO, and an optional small one for Reset.
+This matches a 6-color momentary push-button pack wired left to right as
+**red, blue, green, yellow, white, black** -- each colored button always
+controls the chemical of the same color (red button -> red chemical,
+etc.), white is GO, and black is Reset. A leftover grey button is left
+unwired by default (see **Using the spare grey button** below).
 
 For each button: connect one leg to the Raspberry Pi's **GND** pin, and
 the other leg to the GPIO pin listed in the controls table above. That's
@@ -115,6 +124,17 @@ GPIO25 -> reset button         (other leg -> GND)
 If you'd rather use different pins (e.g. your button box or HAT fixes
 specific pins), just change `GPIO_DROP_PINS`, `GPIO_GO_PIN`, and
 `GPIO_RESET_PIN` in `game/config.py`.
+
+#### Using the spare grey button
+
+Nothing in the game needs a 7th button, so grey is left unwired on
+purpose rather than given a job it doesn't need. If you'd like to use it
+anyway, pick a pin (e.g. BCM 26), wire it the same way as the others
+(button leg -> GPIO 26, other leg -> GND), and add a couple of lines to
+`game/input_manager.py`'s `_init_gpio` to fire whatever action you want
+-- a natural choice would be a "skip this level" button for a frustrating
+level, or a secret grown-up-only quit button tucked somewhere a
+kindergartner won't bump into it.
 
 ### Using a game controller instead
 
