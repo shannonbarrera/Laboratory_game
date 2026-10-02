@@ -15,7 +15,7 @@ import pygame
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from game import config
-from game.app import Game
+from game.world import World
 
 
 def main():
@@ -42,8 +42,8 @@ def main():
     except pygame.error:
         pass
 
-    game = Game(screen)
-    game.run()
+    world = World(screen)
+    world.run()
 
     pygame.quit()
 

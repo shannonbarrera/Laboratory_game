@@ -1,10 +1,15 @@
 # Little Lab: Potion Drops
 
-A kindergarten-friendly "mad scientist" game: colored chemical bottles sit
-on a bench, a recipe card shows (with colored dots, no reading required)
-how many drops of each color go in the beaker, and pressing the big GO
-button triggers a fizzy reaction if the mix is right. Wrong mixes just
-gently reset -- there's no losing, only trying again.
+A kindergarten-friendly "mad scientist" game. The player walks their
+little scientist around a building with a joystick, and each room is a
+different kind of lab. Right now the **Chemistry Lab** is the one that's
+actually playable: colored chemical bottles sit on a bench, a recipe
+card shows (with colored dots, no reading required) how many drops of
+each color go in the beaker, and pressing the big GO button triggers a
+fizzy reaction if the mix is right. Wrong mixes just gently reset --
+there's no losing, only trying again. The other rooms (Bug & Plant Lab,
+Space Lab, Magnet Lab) are there as "coming soon" signposts for future
+mini-games -- see **Adding a new lab room** below.
 
 Built with Python + [pygame](https://www.pygame.org/), runs on a
 Raspberry Pi (tested design target: Pi 4 / Pi 5, should also run fine on
@@ -13,36 +18,41 @@ controller, or real push-buttons wired to the Pi's GPIO pins.
 
 ## How to play
 
-- Each chemical bottle has its own button. Pressing it squeezes one drop
-  into the beaker (with a plop sound and a little splash of bubbles).
-- The **Recipe** card in the top-right shows colored dots: that's how
-  many drops of each color to add.
-- Press the big red **GO!** button when the beaker looks right.
+- **Walking around**: push a joystick's analog stick or d-pad (or arrow
+  keys/WASD on a keyboard) to walk your scientist between rooms. Walk
+  into a room's archway to go in -- no button needed.
+- **Leaving a room**: the grey button (or Backspace on a keyboard) always
+  takes you back out to the hallway, from any room.
+- **In the Chemistry Lab**: each chemical bottle has its own button.
+  Pressing it squeezes one drop into the beaker (with a plop sound and a
+  little splash of bubbles). The **Recipe** card in the top-right shows
+  colored dots: that's how many drops of each color to add. Press the
+  big red **GO!** button when the beaker looks right.
   - Correct → a celebration (confetti, chime, "Great job, scientist!")
     and the next level loads automatically.
   - Not quite → a friendly "Oops! Let's try again" and the beaker empties
     so the child can try again immediately.
-- Miss the same level a few times in a row and small arrows will start
-  gently pointing at which bottle needs more (▲) or fewer (▼) drops.
+  - Miss the same level a few times in a row and small arrows will start
+    gently pointing at which bottle needs more (▲) or fewer (▼) drops.
 
 ## Controls
 
 | Action | Keyboard | Game controller | GPIO (Pi button) |
 | --- | --- | --- | --- |
+| Walk around the hub | arrow keys / WASD | analog stick / d-pad | -- (joystick/keyboard only) |
 | Drop red chemical | `1` | button 0 | BCM 17 -- **red** button |
 | Drop blue chemical | `2` | button 1 | BCM 27 -- **blue** button |
 | Drop green chemical | `3` | button 2 | BCM 22 -- **green** button |
 | Drop yellow chemical | `4` | button 3 | BCM 23 -- **yellow** button |
 | GO! | `space` | button 4 | BCM 24 -- **white** button |
 | Reset beaker | `r` | button 5 | BCM 25 -- **black** button |
+| Back to hallway | `backspace` | button 6 | BCM 26 -- **grey** button |
 | Quit | `esc` | -- | -- |
 
-This matches a colored 6-button pack wired left to right as red, blue,
-green, yellow, white, black -- each color button always controls the
-chemical of the same color, since `game/config.py`'s `CHEMICALS` list and
-`GPIO_DROP_PINS` are both ordered red/blue/green/yellow. A leftover grey
-button isn't wired to anything by default; see **Using the spare grey
-button** below if you'd like to give it a job.
+This matches a colored 7-button pack wired left to right as red, blue,
+green, yellow, white, black, grey -- each color button always controls
+the chemical of the same color, since `game/config.py`'s `CHEMICALS`
+list and `GPIO_DROP_PINS` are both ordered red/blue/green/yellow.
 
 All three input methods work at the same time, so you can test with a
 keyboard before wiring anything up. Edit `game/config.py` to change any
@@ -114,11 +124,16 @@ every time. Two options, depending on what you want:
 
 ### Wiring physical push-buttons (GPIO)
 
-This matches a 6-color momentary push-button pack wired left to right as
-**red, blue, green, yellow, white, black** -- each colored button always
-controls the chemical of the same color (red button -> red chemical,
-etc.), white is GO, and black is Reset. A leftover grey button is left
-unwired by default (see **Using the spare grey button** below).
+This matches a 7-color momentary push-button pack wired left to right as
+**red, blue, green, yellow, white, black, grey** -- each colored button
+always controls the chemical of the same color (red button -> red
+chemical, etc.), white is GO, black is Reset, and grey leaves whatever
+room you're in and returns to the hallway.
+
+Walking around the hallway itself is joystick/keyboard-only (an analog
+stick or d-pad, or arrow keys/WASD) -- there's no GPIO wiring for that,
+since continuous movement doesn't map onto simple push-buttons the way a
+single "add one drop" press does.
 
 For each button: connect one leg to the Raspberry Pi's **GND** pin, and
 the other leg to the GPIO pin listed in the controls table above. That's
@@ -146,34 +161,26 @@ GPIO22 -> green drop button    (other leg -> GND)
 GPIO23 -> yellow drop button   (other leg -> GND)
 GPIO24 -> GO button            (other leg -> GND)
 GPIO25 -> reset button         (other leg -> GND)
+GPIO26 -> back button          (other leg -> GND)
 ```
 
 If you'd rather use different pins (e.g. your button box or HAT fixes
-specific pins), just change `GPIO_DROP_PINS`, `GPIO_GO_PIN`, and
-`GPIO_RESET_PIN` in `game/config.py`.
-
-#### Using the spare grey button
-
-Nothing in the game needs a 7th button, so grey is left unwired on
-purpose rather than given a job it doesn't need. If you'd like to use it
-anyway, pick a pin (e.g. BCM 26), wire it the same way as the others
-(button leg -> GPIO 26, other leg -> GND), and add a couple of lines to
-`game/input_manager.py`'s `_init_gpio` to fire whatever action you want
--- a natural choice would be a "skip this level" button for a frustrating
-level, or a secret grown-up-only quit button tucked somewhere a
-kindergartner won't bump into it.
+specific pins), just change `GPIO_DROP_PINS`, `GPIO_GO_PIN`,
+`GPIO_RESET_PIN`, or `GPIO_BACK_PIN` in `game/config.py`.
 
 ### Using a game controller instead
 
 Any USB or Bluetooth gamepad pygame recognizes will work out of the box
 -- just plug it in (or pair it via `bluetoothctl`) before launching the
-game. By default, face buttons 0-3 add drops and button 4 is GO.
+game. The left analog stick or d-pad walks around the hub; by default,
+face buttons 0-3 add drops, button 4 is GO, button 5 is Reset, and
+button 6 is Back.
 
 **Finding your controller's button numbers:** run this from `lab_game/`
 with the controller plugged in, then press each button and note the
 number that's printed, and update `JOYSTICK_DROP_BUTTONS` /
-`JOYSTICK_GO_BUTTON` / `JOYSTICK_RESET_BUTTON` in `game/config.py` to
-match:
+`JOYSTICK_GO_BUTTON` / `JOYSTICK_RESET_BUTTON` / `JOYSTICK_BACK_BUTTON`
+in `game/config.py` to match:
 
 ```bash
 python3 -c "
@@ -216,22 +223,46 @@ for the graphical desktop to be ready first.
   `HINT_AFTER_FAILURES` in `game/config.py`.
 - **Sounds**: all synthesized in code in `game/sound.py` (no audio files
   to manage) -- tweak pitches/durations there.
+- **The hub building**: room names, colors, positions, and icons are all
+  in the `ROOMS` list in `game/hub.py`. Walking speed is
+  `HUB_MOVE_SPEED` in `game/config.py`.
+
+### Adding a new lab room
+
+The Bug & Plant, Space, and Magnet rooms are placeholders today -- they
+show a "coming soon" sign and nothing else, by design, so the building
+feels alive without requiring four finished mini-games up front. To turn
+one into a real mini-game:
+
+1. Write it the same way `game/app.py`'s `Game` class works: a small
+   class that takes `(screen, input_manager, sound_bank)` and exposes
+   `handle_actions(actions)`, `update(dt)`, and `draw()`.
+2. In `game/world.py`, create an instance of it alongside `self.chem_game`
+   in `World.__init__`.
+3. Flip that room's `"ready": False` to `True` in `game/hub.py`'s `ROOMS`
+   list, and in `World._update_hub`, route to it the same way `mode =
+   "chemistry"` is routed, instead of falling through to `"placeholder"`.
 
 ## Project layout
 
 ```
 lab_game/
   main.py              entry point
+  run.sh                launcher with fullscreen size baked in
   requirements.txt
   systemd/lab-game.service
   game/
     config.py           colors, control mappings, difficulty knobs
-    input_manager.py    keyboard + controller + GPIO -> unified actions
+    input_manager.py    keyboard + controller + GPIO -> unified actions,
+                         plus continuous movement for walking the hub
+    world.py            top-level orchestrator: hub vs. chemistry room
+                         vs. a "coming soon" placeholder room
+    hub.py              the building: rooms, walls, the walking player
     chemical.py         bottle animation state
     beaker.py           drop counts, color blending, fill animation
     particles.py        bubbles / confetti effects
     levels.py           level/recipe definitions + endless generator
     sound.py            synthesized sound effects (no audio files)
-    ui.py               all drawing code
-    app.py              the game state machine (playing/success/fail)
+    ui.py               chemistry room drawing code
+    app.py              the chemistry room's state machine (playing/success/fail)
 ```

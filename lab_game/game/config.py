@@ -97,5 +97,19 @@ GPIO_GO_PIN = 24     # white button -> GO / mix
 GPIO_RESET_PIN = 25  # black button -> reset the beaker
 GPIO_BOUNCE_TIME = 0.05  # seconds, debounces noisy physical buttons
 
+# "Back" leaves whatever lab room you're in and returns to the hallway.
+# This is the spare grey button from the 6-color pack finally getting a
+# job: wire it to GPIO 26, the next free pin after the other six.
+KEYBOARD_BACK_KEY = "backspace"
+JOYSTICK_BACK_BUTTON = 6
+GPIO_BACK_PIN = 26  # grey button -> leave the room, back to the hallway
+
 # --- Misc ---------------------------------------------------------------
 HINT_AFTER_FAILURES = 3
+
+# --- Hub (walking between rooms) ----------------------------------------
+# Movement is read continuously (held keys / analog stick), unlike the
+# press-once drop/GO/reset/back actions above.
+HUB_MOVE_SPEED = 230.0  # pixels/second on the logical canvas
+JOYSTICK_AXIS_DEADZONE = 0.25
+PLAYER_RADIUS = 16

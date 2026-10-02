@@ -1,32 +1,33 @@
-"""The game's state machine: PLAYING -> SUCCESS -> (next level) or
-PLAYING -> FAIL -> (reset, try again). Kept deliberately forgiving --
+"""The chemistry room's state machine: PLAYING -> SUCCESS -> (next level)
+or PLAYING -> FAIL -> (reset, try again). Kept deliberately forgiving --
 there is no "game over", just gentle retries, because the audience is a
 kindergartner who should feel like a scientist, not like they failed a
 test.
+
+This is one room inside the hub building (see game/hub.py and
+game/world.py), so it takes the input manager and sound bank as shared
+resources from there rather than owning them itself -- GPIO pins and the
+mixer can each only be claimed once.
 """
 import pygame
 
 from . import config, levels, ui
 from .beaker import Beaker
 from .chemical import Bottle
-from .input_manager import InputManager
 from .particles import ParticleSystem
-from .sound import SoundBank
 
 SUCCESS_HOLD = 2.2
 FAIL_HOLD = 1.4
 
 
 class Game:
-    def __init__(self, screen):
+    def __init__(self, screen, input_manager, sound_bank):
         self.screen = screen
         self.canvas = pygame.Surface((config.CANVAS_WIDTH, config.CANVAS_HEIGHT))
-        self.clock = pygame.time.Clock()
-        self.input = InputManager()
-        self.sound = SoundBank()
+        self.input = input_manager
+        self.sound = sound_bank
         self.particles = ParticleSystem()
 
-        self.running = True
         self.level_number = 1
         self.streak = 0
         self.fail_count = 0
@@ -67,23 +68,11 @@ class Game:
             x = start_x + spacing * (i + 0.5)
             self.bottle_positions[idx] = (int(x), base_y)
 
-    # -- main loop -------------------------------------------------------
-    def run(self):
-        while self.running:
-            dt = self.clock.tick(config.FPS) / 1000.0
-            actions = self.input.poll()
-            self._handle_actions(actions)
-            self._update(dt)
-            self._draw()
-            pygame.display.flip()
-        self.input.close()
-
-    def _handle_actions(self, actions):
+    # -- per-frame API, driven by World's main loop -----------------------
+    def handle_actions(self, actions):
         for action in actions:
             kind = action[0]
-            if kind == "quit":
-                self.running = False
-            elif kind == "drop" and self.state == "playing":
+            if kind == "drop" and self.state == "playing":
                 self._on_drop(action[1])
             elif kind == "go" and self.state == "playing":
                 self._on_go()
@@ -127,7 +116,7 @@ class Game:
             self.message_color = config.BAD_COLOR
             self.sound.play("fail")
 
-    def _update(self, dt):
+    def update(self, dt):
         for bottle in self.bottles.values():
             bottle.update(dt)
         self.beaker.update(dt)
@@ -146,7 +135,7 @@ class Game:
     def _show_hint(self):
         return self.state == "playing" and self.fail_count >= config.HINT_AFTER_FAILURES
 
-    def _draw(self):
+    def draw(self):
         ui.draw_background(self.canvas)
 
         for idx, bottle in self.bottles.items():
@@ -173,6 +162,8 @@ class Game:
         ui.draw_go_button(self.canvas, go_rect, pulse)
 
         ui.draw_hud(self.canvas, self.level_number, self.streak)
+        ui.draw_text_center(self.canvas, "grey button: back to hallway",
+                             (160, config.CANVAS_HEIGHT - 14), 14, bold=False)
 
         self.particles.draw(self.canvas)
 
