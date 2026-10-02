@@ -46,9 +46,9 @@ def draw_text_center(surface, text, pos, size, color=config.TEXT_COLOR, bold=Tru
     return rect
 
 
-def draw_bottle(surface, bottle, center_x, base_y, current_count, button_label):
-    """A simple round-shouldered bottle with colored liquid inside and a
-    number badge below it showing which button fills it."""
+def draw_bottle(surface, bottle, center_x, base_y, current_count):
+    """A simple round-shouldered bottle with colored liquid inside, and a
+    row of small dots below it counting drops already in the beaker."""
     body_w, body_h = 86, 100
     neck_w, neck_h = 30, 26
 
@@ -78,14 +78,8 @@ def draw_bottle(surface, bottle, center_x, base_y, current_count, button_label):
     rect = rotated.get_rect(center=(center_x, base_y - body_h // 2))
     surface.blit(rotated, rect)
 
-    # Button badge
-    badge_y = base_y + 24
-    pygame.draw.circle(surface, bottle.color, (center_x, badge_y), 22)
-    pygame.draw.circle(surface, config.WHITE, (center_x, badge_y), 22, width=3)
-    draw_text_center(surface, button_label, (center_x, badge_y), 22, color=config.WHITE)
-
     # Dots showing how many drops of this color are already in the beaker.
-    dot_y = badge_y + 34
+    dot_y = base_y + 24
     for i in range(current_count):
         x = center_x - (current_count - 1) * 11 // 2 + i * 11
         pygame.draw.circle(surface, bottle.color, (x, dot_y), 5)

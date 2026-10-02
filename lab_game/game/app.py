@@ -152,7 +152,7 @@ class Game:
         for idx, bottle in self.bottles.items():
             x, y = self.bottle_positions[idx]
             count = self.beaker.counts.get(idx, 0)
-            ui.draw_bottle(self.canvas, bottle, x, y, count, str(idx + 1))
+            ui.draw_bottle(self.canvas, bottle, x, y, count)
             if self._show_hint():
                 target = self.recipe.get(idx, 0)
                 if count != target:
