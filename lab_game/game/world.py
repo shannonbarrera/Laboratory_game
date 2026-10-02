@@ -7,6 +7,7 @@ import pygame
 
 from . import config, hub, ui
 from .app import Game
+from .garden import GardenGame
 from .input_manager import InputManager
 from .sound import SoundBank
 
@@ -20,9 +21,15 @@ class World:
         self.sound = SoundBank()
 
         self.hub = hub.HubWorld()
-        self.chem_game = Game(screen, self.input, self.sound)
+        # One room id -> its game instance. A room only needs an entry
+        # here once it's flipped to "ready": True in hub.py's ROOMS list;
+        # until then it just shows the "coming soon" placeholder.
+        self.rooms = {
+            "chemistry": Game(screen, self.input, self.sound),
+            "biology": GardenGame(screen, self.input, self.sound),
+        }
 
-        self.mode = "hub"  # "hub" | "chemistry" | "placeholder"
+        self.mode = "hub"  # "hub" | a room id | "placeholder"
         self.current_room = None
         self.running = True
 
@@ -44,10 +51,11 @@ class World:
 
             if self.mode == "hub":
                 self._update_hub(dt)
-            elif self.mode == "chemistry":
-                self.chem_game.handle_actions(actions)
-                self.chem_game.update(dt)
-                self.chem_game.draw()
+            elif self.mode in self.rooms:
+                room_game = self.rooms[self.mode]
+                room_game.handle_actions(actions)
+                room_game.update(dt)
+                room_game.draw()
             elif self.mode == "placeholder":
                 self._draw_placeholder()
 
@@ -64,7 +72,7 @@ class World:
         if entered_room:
             room = hub.ROOMS_BY_ID[entered_room]
             self.current_room = entered_room
-            self.mode = "chemistry" if room["ready"] else "placeholder"
+            self.mode = entered_room if room["ready"] else "placeholder"
 
     def _draw_placeholder(self):
         room = hub.ROOMS_BY_ID[self.current_room]

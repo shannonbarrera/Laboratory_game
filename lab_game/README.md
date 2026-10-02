@@ -2,14 +2,22 @@
 
 A kindergarten-friendly "mad scientist" game. The player walks their
 little scientist around a building with a joystick, and each room is a
-different kind of lab. Right now the **Chemistry Lab** is the one that's
-actually playable: colored chemical bottles sit on a bench, a recipe
-card shows (with colored dots, no reading required) how many drops of
-each color go in the beaker, and pressing the big GO button triggers a
-fizzy reaction if the mix is right. Wrong mixes just gently reset --
-there's no losing, only trying again. The other rooms (Bug & Plant Lab,
-Space Lab, Magnet Lab) are there as "coming soon" signposts for future
-mini-games -- see **Adding a new lab room** below.
+different kind of lab:
+
+- **Chemistry Lab**: colored chemical bottles sit on a bench, a recipe
+  card shows (with colored dots, no reading required) how many drops of
+  each color go in the beaker, and pressing the big GO button triggers a
+  fizzy reaction if the mix is right.
+- **Bug & Plant Lab**: grow a plant by pressing the water and sun buttons
+  the number of times the recipe card shows, then GO to see if it
+  blooms. Too much or too little of either and it wilts instead --
+  same idea as the chemistry room, but now two things have to each be
+  right, not just one.
+
+Both are forgiving by design: a wrong mix/amount just gently resets --
+there's no losing, only trying again. The other rooms (Space Lab, Magnet
+Lab) are there as "coming soon" signposts for future mini-games -- see
+**Adding a new lab room** below.
 
 Built with Python + [pygame](https://www.pygame.org/), runs on a
 Raspberry Pi (tested design target: Pi 4 / Pi 5, should also run fine on
@@ -36,6 +44,16 @@ joystick (via Arduino/ESP32)** below).
     so the child can try again immediately.
   - Miss the same level a few times in a row and small arrows will start
     gently pointing at which bottle needs more (▲) or fewer (▼) drops.
+- **In the Bug & Plant Lab**: the blue button waters the plant, the
+  yellow button gives it sun -- each press adds one to that resource,
+  with the plant visibly growing a little taller and leafier as you go.
+  The **Recipe** card shows how many of each (blue dots for water,
+  yellow for sun). Press **GO!** when you think it's right.
+  - Correct → the plant blooms into a flower with a confetti burst and
+    "It bloomed! Great job, gardener!", then the next level loads.
+  - Not quite → the plant gently droops and browns, a friendly "Oops!
+    Let's try again," and it resets so the child can try again.
+  - Same hint arrows as the Chemistry Lab kick in after repeated misses.
 
 ## Controls
 
@@ -273,13 +291,20 @@ for the graphical desktop to be ready first.
 
 ## Customizing it for your kid
 
-- **Levels / recipes**: `game/levels.py` has the first dozen levels
-  spelled out explicitly (one new idea introduced at a time), then makes
-  up new ones forever after that. Add, remove, or reorder entries freely
-  -- `recipe` just maps a chemical index to how many drops are needed.
-- **Colors & names**: `game/config.py`'s `CHEMICALS` list.
+- **Chemistry levels / recipes**: `game/levels.py` has the first dozen
+  levels spelled out explicitly (one new idea introduced at a time), then
+  makes up new ones forever after that. Add, remove, or reorder entries
+  freely -- `recipe` just maps a chemical index to how many drops are
+  needed.
+- **Garden levels / recipes**: `game/garden_levels.py`, same shape --
+  hand-built levels first, then an endless generator. Each level is just
+  `{"water": n, "sun": m}`.
+- **Colors & names**: `game/config.py`'s `CHEMICALS` list for the
+  Chemistry Lab; `WATER_COLOR`/`SUN_COLOR` etc. at the top of
+  `game/garden_ui.py` for the Bug & Plant Lab.
 - **Difficulty pacing**: `MAX_DROPS_PER_CHEMICAL`, `MAX_TOTAL_DROPS`, and
-  `HINT_AFTER_FAILURES` in `game/config.py`.
+  `HINT_AFTER_FAILURES` in `game/config.py` for Chemistry;
+  `MAX_PER_RESOURCE` in `game/garden_levels.py` for the garden.
 - **Sounds**: all synthesized in code in `game/sound.py` (no audio files
   to manage) -- tweak pitches/durations there.
 - **The hub building**: room names, colors, positions, and icons are all
@@ -288,19 +313,26 @@ for the graphical desktop to be ready first.
 
 ### Adding a new lab room
 
-The Bug & Plant, Space, and Magnet rooms are placeholders today -- they
-show a "coming soon" sign and nothing else, by design, so the building
-feels alive without requiring four finished mini-games up front. To turn
-one into a real mini-game:
+The Space and Magnet rooms are placeholders today -- they show a "coming
+soon" sign and nothing else, by design, so the building feels alive
+without requiring every mini-game to exist up front. `game/garden.py`
+(the Bug & Plant Lab) is a complete, working example of turning one into
+a real mini-game, worth reading end to end before making your own. The
+pattern it follows:
 
-1. Write it the same way `game/app.py`'s `Game` class works: a small
-   class that takes `(screen, input_manager, sound_bank)` and exposes
-   `handle_actions(actions)`, `update(dt)`, and `draw()`.
-2. In `game/world.py`, create an instance of it alongside `self.chem_game`
-   in `World.__init__`.
+1. Write a class the same shape as `game/app.py`'s `Game` (or
+   `game/garden.py`'s `GardenGame`): takes `(screen, input_manager,
+   sound_bank)` and exposes `handle_actions(actions)`, `update(dt)`, and
+   `draw()`. It's free to reinterpret the same color-button presses
+   differently than other rooms do -- `GardenGame` treats the blue/yellow
+   buttons as "water"/"sun" instead of chemicals, since the physical
+   button a player presses always means the same color, not the same
+   fixed action.
+2. In `game/world.py`, add it to the `self.rooms` dict in `World.__init__`
+   (keyed by the room's `id` from `hub.py`).
 3. Flip that room's `"ready": False` to `True` in `game/hub.py`'s `ROOMS`
-   list, and in `World._update_hub`, route to it the same way `mode =
-   "chemistry"` is routed, instead of falling through to `"placeholder"`.
+   list -- `World` already routes to any room id present in `self.rooms`
+   automatically.
 
 ## Project layout
 
@@ -319,14 +351,17 @@ lab_game/
                          unified actions, plus continuous movement for
                          walking the hub
     serial_joystick.py  reads the Arduino/ESP32 joystick bridge over USB
-    world.py            top-level orchestrator: hub vs. chemistry room
+    world.py            top-level orchestrator: hub vs. each room's game
                          vs. a "coming soon" placeholder room
     hub.py              the building: rooms, walls, the walking player
-    chemical.py         bottle animation state
-    beaker.py           drop counts, color blending, fill animation
-    particles.py        bubbles / confetti effects
-    levels.py           level/recipe definitions + endless generator
+    particles.py        bubbles / confetti effects (shared by all rooms)
     sound.py            synthesized sound effects (no audio files)
-    ui.py               chemistry room drawing code
-    app.py              the chemistry room's state machine (playing/success/fail)
+    chemical.py         bottle animation state (Chemistry Lab)
+    beaker.py           drop counts, color blending, fill animation (Chemistry Lab)
+    levels.py           Chemistry Lab level/recipe definitions + endless generator
+    ui.py               Chemistry Lab drawing code
+    app.py              Chemistry Lab's state machine (playing/success/fail)
+    garden_levels.py    Bug & Plant Lab level/recipe definitions + endless generator
+    garden_ui.py        Bug & Plant Lab drawing code (pot, growing plant, water/sun)
+    garden.py           Bug & Plant Lab's state machine (growing/success/fail)
 ```

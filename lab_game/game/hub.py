@@ -32,7 +32,7 @@ ROOMS = [
         "rect": pygame.Rect(102, 220, 260, 160),
         "open_side": "right",
         "icon": "leaf",
-        "ready": False,
+        "ready": True,
     },
     {
         "id": "space",
