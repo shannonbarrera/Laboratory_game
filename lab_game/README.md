@@ -81,6 +81,22 @@ Useful environment variables:
   laptop that prints gpiozero warnings; it's already auto-skipped if no
   GPIO hardware is found, this just silences it).
 
+### Making your fullscreen settings stick
+
+Once you've found the `LAB_GAME_WIDTH`/`LAB_GAME_HEIGHT` values that make
+it fit your screen correctly, you don't want to retype that whole command
+every time. Two options, depending on what you want:
+
+- **Just don't want to retype the command**: edit the two numbers at the
+  top of `run.sh` to match what worked for you, then from now on run:
+  ```bash
+  ./run.sh
+  ```
+- **Want it to launch automatically when the Pi boots**, with no command
+  at all: see **Auto-start on boot (kiosk mode)** below -- the systemd
+  service already has the same two settings built in (commented out by
+  default), you just need to uncomment and fill them in.
+
 ## Setting up on a Raspberry Pi
 
 1. Flash Raspberry Pi OS (with desktop) and boot it, or use an existing
@@ -175,8 +191,10 @@ while True:
 
 So the Pi boots straight into the game, a systemd service is included in
 `systemd/lab-game.service`. Edit the `User=`, `WorkingDirectory=`, and
-`ExecStart=` paths in that file to match where you copied `lab_game/`,
-then:
+`ExecStart=` paths in that file to match where you copied `lab_game/`. If
+you needed `LAB_GAME_WIDTH`/`LAB_GAME_HEIGHT` to get fullscreen fitting
+your screen correctly (see above), also uncomment and fill in those two
+`Environment=` lines in the same file. Then:
 
 ```bash
 sudo cp systemd/lab-game.service /etc/systemd/system/
