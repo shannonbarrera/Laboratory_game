@@ -13,6 +13,12 @@ FPS = 30
 FULLSCREEN = os.environ.get("LAB_GAME_FULLSCREEN", "0") == "1"
 WINDOW_WIDTH = int(os.environ.get("LAB_GAME_WIDTH", CANVAS_WIDTH))
 WINDOW_HEIGHT = int(os.environ.get("LAB_GAME_HEIGHT", CANVAS_HEIGHT))
+# Whether LAB_GAME_WIDTH/HEIGHT were explicitly set, vs. just defaulted.
+# In fullscreen, main.py normally asks SDL to auto-detect the screen size,
+# but some Pi + display combos report the wrong size (e.g. a small HDMI
+# panel that doesn't report its real resolution). Setting both of these
+# env vars forces that exact size instead of trusting auto-detection.
+SIZE_OVERRIDDEN = "LAB_GAME_WIDTH" in os.environ and "LAB_GAME_HEIGHT" in os.environ
 
 # --- Colors --------------------------------------------------------------
 # A bright, clean "science classroom" palette: bold navy outlines and flat

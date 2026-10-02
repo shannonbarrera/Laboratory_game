@@ -23,11 +23,15 @@ def main():
     pygame.display.set_caption("Little Lab: Potion Drops")
 
     if config.FULLSCREEN:
-        # (0, 0) tells SDL to use the display's current resolution,
-        # whatever that happens to be on this particular screen/Pi,
-        # instead of guessing a fixed size that might not match it.
         flags = pygame.FULLSCREEN
-        size = (0, 0)
+        if config.SIZE_OVERRIDDEN:
+            # LAB_GAME_WIDTH/HEIGHT were set explicitly -- trust them over
+            # auto-detection, for displays that report the wrong size.
+            size = (config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
+        else:
+            # (0, 0) tells SDL to use the display's current resolution,
+            # whatever that happens to be on this particular screen/Pi.
+            size = (0, 0)
     else:
         flags = 0
         size = (config.WINDOW_WIDTH, config.WINDOW_HEIGHT)

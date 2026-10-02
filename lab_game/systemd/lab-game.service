@@ -12,6 +12,10 @@ ExecStart=/usr/bin/python3 /home/pi/lab_game/main.py
 Environment=LAB_GAME_FULLSCREEN=1
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/pi/.Xauthority
+# If fullscreen doesn't fill your screen correctly, uncomment these two
+# and set them to your screen's real pixel size (see README.md):
+#Environment=LAB_GAME_WIDTH=800
+#Environment=LAB_GAME_HEIGHT=480
 
 Restart=on-failure
 RestartSec=2
