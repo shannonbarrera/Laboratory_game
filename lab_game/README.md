@@ -62,10 +62,13 @@ python3 main.py
 Useful environment variables:
 
 - `LAB_GAME_FULLSCREEN=1` -- launch fullscreen (good for the final kiosk
-  setup; leave unset while you're testing on a laptop).
-- `LAB_GAME_WIDTH` / `LAB_GAME_HEIGHT` -- window size (defaults to
-  1024x600; the game scales its artwork to fit whatever you set,
-  including the 800x480 official Pi touchscreen).
+  setup; leave unset while you're testing on a laptop). Fullscreen always
+  auto-detects your actual screen's resolution -- whatever that is (the
+  800x480 official Pi touchscreen, a 1920x1080 HDMI monitor, whatever),
+  the artwork scales to fill it, so there's nothing to configure here.
+- `LAB_GAME_WIDTH` / `LAB_GAME_HEIGHT` -- only used for the *windowed*
+  mode (i.e. when `LAB_GAME_FULLSCREEN` is unset), to pick a window size
+  while testing on a laptop. Defaults to 1024x600.
 - `LAB_GAME_GPIO=0` -- turn off GPIO entirely (handy when testing on a
   laptop that prints gpiozero warnings; it's already auto-skipped if no
   GPIO hardware is found, this just silences it).

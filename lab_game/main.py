@@ -22,8 +22,16 @@ def main():
     pygame.init()
     pygame.display.set_caption("Little Lab: Potion Drops")
 
-    flags = pygame.FULLSCREEN if config.FULLSCREEN else 0
-    screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT), flags)
+    if config.FULLSCREEN:
+        # (0, 0) tells SDL to use the display's current resolution,
+        # whatever that happens to be on this particular screen/Pi,
+        # instead of guessing a fixed size that might not match it.
+        flags = pygame.FULLSCREEN
+        size = (0, 0)
+    else:
+        flags = 0
+        size = (config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
+    screen = pygame.display.set_mode(size, flags)
 
     try:
         pygame.mouse.set_visible(not config.FULLSCREEN)
