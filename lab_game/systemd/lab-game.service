@@ -1,0 +1,20 @@
+[Unit]
+Description=Little Lab: Potion Drops kiosk
+After=graphical.target
+Wants=graphical.target
+
+[Service]
+# Edit these three to match your setup.
+User=pi
+WorkingDirectory=/home/pi/lab_game
+ExecStart=/usr/bin/python3 /home/pi/lab_game/main.py
+
+Environment=LAB_GAME_FULLSCREEN=1
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

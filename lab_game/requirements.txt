@@ -1,0 +1,12 @@
+pygame>=2.5
+numpy>=1.24
+
+# Only needed for physical GPIO push-buttons on a real Raspberry Pi.
+# Safe to install everywhere -- the game detects when there's no real
+# GPIO hardware and simply falls back to keyboard/controller input.
+gpiozero>=2.0
+
+# gpiozero's own hardware backend on a Raspberry Pi. Pi 5 uses lgpio;
+# older Pis (3/4/Zero) use RPi.GPIO. Installing both is harmless.
+lgpio; platform_machine == "aarch64" or platform_machine == "armv7l"
+RPi.GPIO; platform_machine == "armv7l" or platform_machine == "armv6l"
