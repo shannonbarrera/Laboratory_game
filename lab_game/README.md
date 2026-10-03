@@ -19,11 +19,17 @@ different kind of lab:
   "Launch Code" card shows, then GO to launch the rocket. A different
   idea than the other two rooms: order matters here, not just counts --
   one wrong button and the code resets, same as a real launch sequence.
+- **Magnet Lab**: an object appears -- guess whether it's magnetic (red)
+  or not (blue), then GO to test it. Get a streak of guesses right in a
+  row to complete the level. Unlike the other rooms, there's no on-screen
+  recipe that spells out the right answer -- it's real-world knowledge
+  (metal sticks, wood/plastic/feathers don't), and a wrong guess tells you
+  the right answer so it doubles as a little lesson.
 
-All three are forgiving by design: a mistake just gently resets --
-there's no losing, only trying again. The remaining room (Magnet Lab) is
-there as a "coming soon" signpost for a future mini-game -- see **Adding
-a new lab room** below.
+All four are forgiving by design: a mistake just gently resets -- there's
+no losing, only trying again. Every room in the building is a real
+mini-game now; see **Adding a new lab room** below if you want to build
+a fifth.
 
 Built with Python + [pygame](https://www.pygame.org/), runs on a
 Raspberry Pi (tested design target: Pi 4 / Pi 5, should also run fine on
@@ -77,6 +83,16 @@ joystick (via Arduino/ESP32)** below).
     start of the sequence -- no long pause, just try again right away.
   - Pressing GO before finishing the code also resets it, with a "Finish
     the launch code first!" reminder.
+- **In the Magnet Lab**: an object (paperclip, spoon, key, nail, feather,
+  leaf, wood block, rubber ball...) appears above the magnet. Press
+  **red** if you think it'll stick, **blue** if you think it won't, then
+  **GO!** to test it.
+  - Correct → a satisfying "cling!" (if it stuck) or a soft pop (if it
+    didn't), and the next object appears. Get enough right in a row (the
+    "Sort in a row!" card shows how many) to finish the level with a big
+    celebration.
+  - Wrong → a quick, friendly correction ("Oops! A nail sticks!") and the
+    streak starts over, but the level itself is never lost.
 
 ## Controls
 
@@ -325,6 +341,12 @@ for the graphical desktop to be ready first.
 - **Space launch sequences**: `game/space_levels.py`, same shape again --
   each level is just a list of color indices, e.g. `[0, 3, 2, 1]` for
   red-yellow-green-blue in that order.
+- **Magnet Lab streak targets**: `game/magnet_levels.py` -- a level here
+  is just how many correct guesses in a row are needed. The objects
+  themselves are `game/magnet_ui.py`'s `MAGNETIC_OBJECTS` /
+  `NON_MAGNETIC_OBJECTS` lists -- add your own by giving it a name, a
+  color, whether it's magnetic, and either reusing an existing `icon`
+  key or adding a new drawing case to `draw_object()`.
 - **Colors & names**: `game/config.py`'s `CHEMICALS` list for the
   Chemistry Lab and (reused directly) the Space Lab's launch code;
   `WATER_COLOR`/`SUN_COLOR` etc. at the top of `game/garden_ui.py` for the
@@ -332,7 +354,8 @@ for the graphical desktop to be ready first.
 - **Difficulty pacing**: `MAX_DROPS_PER_CHEMICAL`, `MAX_TOTAL_DROPS`, and
   `HINT_AFTER_FAILURES` in `game/config.py` for Chemistry;
   `MAX_PER_RESOURCE` in `game/garden_levels.py` for the garden;
-  `MAX_LENGTH` in `game/space_levels.py` for how long sequences can get.
+  `MAX_LENGTH` in `game/space_levels.py` for how long sequences can get;
+  `MAX_TARGET` in `game/magnet_levels.py` for the longest required streak.
 - **Bugs**: `BUGS_START_LEVEL`, `BUG_WARN_TIME`, `BUG_LIFESPAN`,
   `BUG_SPAWN_MIN`/`BUG_SPAWN_MAX` at the top of `game/garden.py` -- e.g.
   raise `BUGS_START_LEVEL` to delay them further, or widen the spawn
@@ -345,27 +368,32 @@ for the graphical desktop to be ready first.
 
 ### Adding a new lab room
 
-The Magnet room is a placeholder today -- it shows a "coming soon" sign
-and nothing else, by design, so the building feels alive without
-requiring every mini-game to exist up front. `game/garden.py` (the Bug &
-Plant Lab) and `game/space.py` (the Space Lab) are both complete, working
-examples of turning one into a real mini-game, worth reading end to end
-before making your own -- between them they show two very different
-mechanics built on the exact same pattern. That pattern:
+Every room in the building is a real mini-game now, but the hub was
+built so a new one is a clean addition, not a rewrite -- a placeholder
+room shows a "coming soon" sign and nothing else until it's wired up,
+so the building can grow without every mini-game needing to exist up
+front. `game/garden.py` (Bug & Plant Lab), `game/space.py` (Space Lab),
+and `game/magnet.py` (Magnet Lab) are three complete, working examples
+to read end to end before making a fourth -- between them they show
+three very different mechanics (two independent targets, an ordered
+sequence, and a classification quiz with no visual recipe at all) built
+on the exact same pattern. That pattern:
 
 1. Write a class the same shape as `game/app.py`'s `Game` (or
-   `GardenGame`/`SpaceGame`): takes `(screen, input_manager, sound_bank)`
-   and exposes `handle_actions(actions)`, `update(dt)`, and `draw()`.
-   It's free to reinterpret the same color-button presses differently
-   than other rooms do -- `GardenGame` treats the blue/yellow buttons as
-   "water"/"sun" instead of chemicals, `SpaceGame` treats all four as
-   ordered launch-code steps -- since the physical button a player
-   presses always means the same color, not the same fixed action.
-2. In `game/world.py`, add it to the `self.rooms` dict in `World.__init__`
-   (keyed by the room's `id` from `hub.py`).
-3. Flip that room's `"ready": False` to `True` in `game/hub.py`'s `ROOMS`
-   list -- `World` already routes to any room id present in `self.rooms`
-   automatically.
+   `GardenGame`/`SpaceGame`/`MagnetGame`): takes `(screen, input_manager,
+   sound_bank)` and exposes `handle_actions(actions)`, `update(dt)`, and
+   `draw()`. It's free to reinterpret the same color-button presses
+   differently than other rooms do -- `GardenGame` treats the
+   blue/yellow buttons as "water"/"sun", `SpaceGame` treats all four as
+   ordered launch-code steps, `MagnetGame` treats red/blue as "yes"/"no"
+   -- since the physical button a player presses always means the same
+   color, not the same fixed action.
+2. In `game/world.py`, add a new room by first creating it in `hub.py`'s
+   `ROOMS` list (with `"ready": False` while you build it), then add an
+   instance of your class to the `self.rooms` dict in `World.__init__`
+   (keyed by that room's `id`).
+3. Flip `"ready"` to `True` once it's working -- `World` already routes
+   to any room id present in `self.rooms` automatically.
 
 ## Project layout
 
@@ -400,4 +428,7 @@ lab_game/
     space_levels.py     Space Lab launch-sequence definitions + endless generator
     space_ui.py         Space Lab drawing code (rocket, launchpad, sequence card)
     space.py            Space Lab's state machine (ready/success/fail)
+    magnet_levels.py    Magnet Lab streak-target definitions + endless generator
+    magnet_ui.py        Magnet Lab drawing code (objects, magnet, progress dots)
+    magnet.py           Magnet Lab's state machine (guessing/success/fail)
 ```

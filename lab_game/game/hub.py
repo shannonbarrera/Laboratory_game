@@ -52,7 +52,7 @@ ROOMS = [
         "rect": pygame.Rect(662, 220, 260, 160),
         "open_side": "left",
         "icon": "magnet",
-        "ready": False,
+        "ready": True,
     },
 ]
 

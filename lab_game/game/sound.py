@@ -93,6 +93,10 @@ class SoundBank:
         # ...and a gentle (not scary) one for when a bug gets a bite in.
         self._make("munch", _tone(260, 0.1, volume=0.35, shape="square"))
 
+        # A bright little metallic "cling!" for a magnet correctly catching something.
+        cling_notes = [_tone(f, 0.07, volume=0.4) for f in (900, 1200)]
+        self._make("cling", _concat(*cling_notes))
+
     def play(self, name):
         if not self.enabled:
             return

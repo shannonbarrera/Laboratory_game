@@ -9,6 +9,7 @@ from . import config, hub, ui
 from .app import Game
 from .garden import GardenGame
 from .input_manager import InputManager
+from .magnet import MagnetGame
 from .sound import SoundBank
 from .space import SpaceGame
 
@@ -29,6 +30,7 @@ class World:
             "chemistry": Game(screen, self.input, self.sound),
             "biology": GardenGame(screen, self.input, self.sound),
             "space": SpaceGame(screen, self.input, self.sound),
+            "physics": MagnetGame(screen, self.input, self.sound),
         }
 
         self.mode = "hub"  # "hub" | a room id | "placeholder"
