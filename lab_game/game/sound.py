@@ -87,6 +87,12 @@ class SoundBank:
         self._make("reset", _tone(180, 0.1, volume=0.3))
         self._make("full", _tone(150, 0.08, volume=0.35, shape="square"))
 
+        # A cheerful little blip for shooing a bug away...
+        shoo_notes = [_tone(f, 0.06, volume=0.4) for f in (500, 700)]
+        self._make("shoo", _concat(*shoo_notes))
+        # ...and a gentle (not scary) one for when a bug gets a bite in.
+        self._make("munch", _tone(260, 0.1, volume=0.35, shape="square"))
+
     def play(self, name):
         if not self.enabled:
             return

@@ -12,7 +12,9 @@ different kind of lab:
   the number of times the recipe card shows, then GO to see if it
   blooms. Too much or too little of either and it wilts instead --
   same idea as the chemistry room, but now two things have to each be
-  right, not just one.
+  right, not just one. Starting a few levels in, ladybugs occasionally
+  wander onto the plant and start nibbling it; the green button shoos
+  them away.
 
 Both are forgiving by design: a wrong mix/amount just gently resets --
 there's no losing, only trying again. The other rooms (Space Lab, Magnet
@@ -54,6 +56,12 @@ joystick (via Arduino/ESP32)** below).
   - Not quite → the plant gently droops and browns, a friendly "Oops!
     Let's try again," and it resets so the child can try again.
   - Same hint arrows as the Chemistry Lab kick in after repeated misses.
+  - From level 4 onward, a ladybug occasionally wanders in and starts
+    nibbling the plant. Press the **green** button to shoo it away for a
+    happy little chime. Ignore it and it takes one gentle "bite" -- one
+    water or sun press' worth -- then leaves on its own; nothing is ever
+    lost for good, it just might mean pressing water or sun again before
+    GO.
 
 ## Controls
 
@@ -305,6 +313,10 @@ for the graphical desktop to be ready first.
 - **Difficulty pacing**: `MAX_DROPS_PER_CHEMICAL`, `MAX_TOTAL_DROPS`, and
   `HINT_AFTER_FAILURES` in `game/config.py` for Chemistry;
   `MAX_PER_RESOURCE` in `game/garden_levels.py` for the garden.
+- **Bugs**: `BUGS_START_LEVEL`, `BUG_WARN_TIME`, `BUG_LIFESPAN`,
+  `BUG_SPAWN_MIN`/`BUG_SPAWN_MAX` at the top of `game/garden.py` -- e.g.
+  raise `BUGS_START_LEVEL` to delay them further, or widen the spawn
+  range to make them rarer.
 - **Sounds**: all synthesized in code in `game/sound.py` (no audio files
   to manage) -- tweak pitches/durations there.
 - **The hub building**: room names, colors, positions, and icons are all

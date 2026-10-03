@@ -18,6 +18,7 @@ STEM_COLOR = (70, 170, 90)
 WILT_COLOR = (150, 130, 80)
 LEAF_COLOR = (90, 200, 90)
 PETAL_COLOR = (235, 90, 150)
+BUG_COLOR = (225, 70, 60)
 
 MAX_STEM_PRESSES = 10  # just a rendering cap, independent of gameplay max
 
@@ -147,3 +148,26 @@ def _draw_flower(surface, center, bloom):
 def _lerp_color(a, b, t):
     t = max(0.0, min(1.0, t))
     return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def draw_bug(surface, x, y, eating):
+    """A friendly ladybug visiting the plant. It wiggles gently while
+    just sitting there, and more energetically once it starts eating --
+    a clear, non-scary visual "shoo it now" cue."""
+    wiggle_speed = 0.02 if eating else 0.006
+    wiggle_size = 3 if eating else 1
+    wiggle = math.sin(pygame.time.get_ticks() * wiggle_speed) * wiggle_size
+    bx, by = x + wiggle, y
+
+    pygame.draw.circle(surface, BUG_COLOR, (int(bx), int(by)), 11)
+    pygame.draw.circle(surface, config.NAVY, (int(bx), int(by)), 11, width=2)
+    pygame.draw.line(surface, config.NAVY, (bx, by - 11), (bx, by + 11), 2)
+    for dx, dy in ((-5, -4), (5, -4), (-5, 4), (5, 4), (0, -7)):
+        pygame.draw.circle(surface, config.NAVY, (int(bx + dx), int(by + dy)), 2)
+
+    # Small antennae, perked up more while eating (excited/busy).
+    antenna_spread = 6 if eating else 3
+    pygame.draw.line(surface, config.NAVY, (bx - 3, by - 11),
+                      (bx - antenna_spread, by - 17), 2)
+    pygame.draw.line(surface, config.NAVY, (bx + 3, by - 11),
+                      (bx + antenna_spread, by - 17), 2)

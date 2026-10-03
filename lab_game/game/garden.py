@@ -7,8 +7,11 @@ getting one right doesn't mean you're done.
 Reuses the bench's two color buttons that make the most sense for this
 room (blue -> water, yellow -> sun) rather than inventing new physical
 controls: button colors always mean the same chemical/resource identity
-on the bench, just reinterpreted per room.
+on the bench, just reinterpreted per room. The green button -- unused by
+water/sun -- shoos away bugs that wander in starting a few levels in.
 """
+import random
+
 import pygame
 
 from . import config, garden_levels, garden_ui, ui
@@ -20,12 +23,36 @@ FAIL_HOLD = 1.6
 
 WATER_DROP_INDEX = 1  # the blue button
 SUN_DROP_INDEX = 3  # the yellow button
+SHOO_DROP_INDEX = 2  # the green button
 
 POT_CENTER_X = 422
 POT_TOP_Y = 275
 WATER_X = 241
 SUN_X = 603
 SOURCE_BASE_Y = 450
+
+# Bugs start showing up once the player has gotten comfortable with both
+# water and sun on their own (levels 1-3), rather than from the very
+# first level. A bug that's ignored takes one gentle "bite" -- knocking a
+# resource count down by one -- rather than failing the level outright,
+# so there's a real reason to shoo it but never a punishing one: at worst
+# it means pressing water or sun one more time before GO.
+BUGS_START_LEVEL = 4
+BUG_WARN_TIME = 1.2  # seconds before it visibly starts eating
+BUG_LIFESPAN = 4.5  # seconds total before it takes its bite and leaves
+BUG_SPAWN_MIN = 4.0
+BUG_SPAWN_MAX = 8.0
+
+
+class Bug:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.age = 0.0
+
+    @property
+    def is_eating(self):
+        return self.age >= BUG_WARN_TIME
 
 
 class GardenGame:
@@ -51,6 +78,8 @@ class GardenGame:
 
         self.water_count = 0
         self.sun_count = 0
+        self.bug = None
+        self.bug_spawn_timer = 0.0
         self._load_level(self.level_number)
 
     # -- level setup ---------------------------------------------------
@@ -59,6 +88,8 @@ class GardenGame:
         self.water_count = 0
         self.sun_count = 0
         self.fail_count = 0
+        self.bug = None
+        self.bug_spawn_timer = random.uniform(BUG_SPAWN_MIN, BUG_SPAWN_MAX)
 
     # -- per-frame API, driven by World's main loop -----------------------
     def handle_actions(self, actions):
@@ -69,6 +100,8 @@ class GardenGame:
                     self._on_water()
                 elif action[1] == SUN_DROP_INDEX:
                     self._on_sun()
+                elif action[1] == SHOO_DROP_INDEX:
+                    self._on_shoo()
             elif kind == "go" and self.state == "growing":
                 self._on_go()
             elif kind == "reset" and self.state == "growing":
@@ -96,7 +129,30 @@ class GardenGame:
             self.sound.play("full")
             self.particles.spawn_fizzle(SUN_X, SOURCE_BASE_Y - 100, garden_ui.SUN_COLOR)
 
+    def _on_shoo(self):
+        if self.bug is None:
+            return
+        self.particles.spawn_celebration(self.bug.x, self.bug.y, [garden_ui.BUG_COLOR])
+        self.sound.play("shoo")
+        self.bug = None
+        self.bug_spawn_timer = random.uniform(BUG_SPAWN_MIN, BUG_SPAWN_MAX)
+
+    def _bug_eats_plant(self):
+        # Takes one bite out of whichever resource is currently larger
+        # (ties broken toward water), never going below zero. A bug that
+        # wanders in before anything's been pressed just finds nothing to
+        # eat and leaves empty-handed.
+        if self.water_count == 0 and self.sun_count == 0:
+            return
+        if self.water_count >= self.sun_count:
+            self.water_count = max(0, self.water_count - 1)
+        else:
+            self.sun_count = max(0, self.sun_count - 1)
+        self.sound.play("munch")
+        self.particles.spawn_fizzle(self.bug.x, self.bug.y, garden_ui.LEAF_COLOR)
+
     def _on_go(self):
+        self.bug = None
         self.sound.play("go")
         if self.water_count == self.recipe["water"] and self.sun_count == self.recipe["sun"]:
             self.state = "success"
@@ -123,6 +179,7 @@ class GardenGame:
         self.water_source.update(dt)
         self.sun_source.update(dt)
         self.particles.update(dt)
+        self._update_bug(dt)
 
         target_bloom = 1.0 if self.state == "success" else 0.0
         self.plant_bloom += (target_bloom - self.plant_bloom) * min(1.0, dt * 4)
@@ -139,6 +196,22 @@ class GardenGame:
                     self.water_count = 0
                     self.sun_count = 0
                 self.state = "growing"
+
+    def _update_bug(self, dt):
+        if self.state != "growing" or self.level_number < BUGS_START_LEVEL:
+            return
+        if self.bug is None:
+            self.bug_spawn_timer -= dt
+            if self.bug_spawn_timer <= 0:
+                x = POT_CENTER_X + random.randint(-40, 40)
+                y = POT_TOP_Y - random.randint(10, 120)
+                self.bug = Bug(x, y)
+        else:
+            self.bug.age += dt
+            if self.bug.age >= BUG_LIFESPAN:
+                self._bug_eats_plant()
+                self.bug = None
+                self.bug_spawn_timer = random.uniform(BUG_SPAWN_MIN, BUG_SPAWN_MAX)
 
     def _show_hint(self):
         return self.state == "growing" and self.fail_count >= config.HINT_AFTER_FAILURES
@@ -163,6 +236,9 @@ class GardenGame:
         garden_ui.draw_pot_and_plant(self.canvas, POT_CENTER_X, POT_TOP_Y, total_presses,
                                       self.plant_bloom, self.plant_wilt)
 
+        if self.bug is not None:
+            garden_ui.draw_bug(self.canvas, self.bug.x, self.bug.y, self.bug.is_eating)
+
         recipe_rect = pygame.Rect(config.CANVAS_WIDTH - 230, 70, 200, 60 + 34 * 2)
         fake_chemicals = {0: {"color": garden_ui.WATER_COLOR}, 1: {"color": garden_ui.SUN_COLOR}}
         fake_recipe = {0: self.recipe["water"], 1: self.recipe["sun"]}
@@ -177,6 +253,9 @@ class GardenGame:
         ui.draw_hud(self.canvas, self.level_number, self.streak)
         ui.draw_text_center(self.canvas, "grey button: back to hallway",
                              (160, config.CANVAS_HEIGHT - 14), 14, bold=False)
+        if self.level_number >= BUGS_START_LEVEL:
+            ui.draw_text_center(self.canvas, "green button: shoo the bug!",
+                                 (700, config.CANVAS_HEIGHT - 14), 14, bold=False)
 
         self.particles.draw(self.canvas)
 
