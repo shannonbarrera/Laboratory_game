@@ -15,11 +15,15 @@ different kind of lab:
   right, not just one. Starting a few levels in, ladybugs occasionally
   wander onto the plant and start nibbling it; the green button shoos
   them away.
+- **Space Lab**: press the four color buttons in the exact order the
+  "Launch Code" card shows, then GO to launch the rocket. A different
+  idea than the other two rooms: order matters here, not just counts --
+  one wrong button and the code resets, same as a real launch sequence.
 
-Both are forgiving by design: a wrong mix/amount just gently resets --
-there's no losing, only trying again. The other rooms (Space Lab, Magnet
-Lab) are there as "coming soon" signposts for future mini-games -- see
-**Adding a new lab room** below.
+All three are forgiving by design: a mistake just gently resets --
+there's no losing, only trying again. The remaining room (Magnet Lab) is
+there as a "coming soon" signpost for a future mini-game -- see **Adding
+a new lab room** below.
 
 Built with Python + [pygame](https://www.pygame.org/), runs on a
 Raspberry Pi (tested design target: Pi 4 / Pi 5, should also run fine on
@@ -62,6 +66,17 @@ joystick (via Arduino/ESP32)** below).
     water or sun press' worth -- then leaves on its own; nothing is ever
     lost for good, it just might mean pressing water or sun again before
     GO.
+- **In the Space Lab**: the **Launch Code** card shows a row of colored
+  dots in order -- press the matching color buttons in that exact
+  sequence. Each correct press checks off that step; the rocket glows
+  once the whole code is entered correctly. Press **GO!** to launch.
+  - Correct order, then GO → the rocket blasts off in a burst of flame
+    and confetti, "Blast off! Great job, astronaut!", then the next
+    (usually longer) sequence loads.
+  - Wrong button at any point → an immediate, quick reset back to the
+    start of the sequence -- no long pause, just try again right away.
+  - Pressing GO before finishing the code also resets it, with a "Finish
+    the launch code first!" reminder.
 
 ## Controls
 
@@ -307,12 +322,17 @@ for the graphical desktop to be ready first.
 - **Garden levels / recipes**: `game/garden_levels.py`, same shape --
   hand-built levels first, then an endless generator. Each level is just
   `{"water": n, "sun": m}`.
+- **Space launch sequences**: `game/space_levels.py`, same shape again --
+  each level is just a list of color indices, e.g. `[0, 3, 2, 1]` for
+  red-yellow-green-blue in that order.
 - **Colors & names**: `game/config.py`'s `CHEMICALS` list for the
-  Chemistry Lab; `WATER_COLOR`/`SUN_COLOR` etc. at the top of
-  `game/garden_ui.py` for the Bug & Plant Lab.
+  Chemistry Lab and (reused directly) the Space Lab's launch code;
+  `WATER_COLOR`/`SUN_COLOR` etc. at the top of `game/garden_ui.py` for the
+  Bug & Plant Lab.
 - **Difficulty pacing**: `MAX_DROPS_PER_CHEMICAL`, `MAX_TOTAL_DROPS`, and
   `HINT_AFTER_FAILURES` in `game/config.py` for Chemistry;
-  `MAX_PER_RESOURCE` in `game/garden_levels.py` for the garden.
+  `MAX_PER_RESOURCE` in `game/garden_levels.py` for the garden;
+  `MAX_LENGTH` in `game/space_levels.py` for how long sequences can get.
 - **Bugs**: `BUGS_START_LEVEL`, `BUG_WARN_TIME`, `BUG_LIFESPAN`,
   `BUG_SPAWN_MIN`/`BUG_SPAWN_MAX` at the top of `game/garden.py` -- e.g.
   raise `BUGS_START_LEVEL` to delay them further, or widen the spawn
@@ -325,21 +345,22 @@ for the graphical desktop to be ready first.
 
 ### Adding a new lab room
 
-The Space and Magnet rooms are placeholders today -- they show a "coming
-soon" sign and nothing else, by design, so the building feels alive
-without requiring every mini-game to exist up front. `game/garden.py`
-(the Bug & Plant Lab) is a complete, working example of turning one into
-a real mini-game, worth reading end to end before making your own. The
-pattern it follows:
+The Magnet room is a placeholder today -- it shows a "coming soon" sign
+and nothing else, by design, so the building feels alive without
+requiring every mini-game to exist up front. `game/garden.py` (the Bug &
+Plant Lab) and `game/space.py` (the Space Lab) are both complete, working
+examples of turning one into a real mini-game, worth reading end to end
+before making your own -- between them they show two very different
+mechanics built on the exact same pattern. That pattern:
 
 1. Write a class the same shape as `game/app.py`'s `Game` (or
-   `game/garden.py`'s `GardenGame`): takes `(screen, input_manager,
-   sound_bank)` and exposes `handle_actions(actions)`, `update(dt)`, and
-   `draw()`. It's free to reinterpret the same color-button presses
-   differently than other rooms do -- `GardenGame` treats the blue/yellow
-   buttons as "water"/"sun" instead of chemicals, since the physical
-   button a player presses always means the same color, not the same
-   fixed action.
+   `GardenGame`/`SpaceGame`): takes `(screen, input_manager, sound_bank)`
+   and exposes `handle_actions(actions)`, `update(dt)`, and `draw()`.
+   It's free to reinterpret the same color-button presses differently
+   than other rooms do -- `GardenGame` treats the blue/yellow buttons as
+   "water"/"sun" instead of chemicals, `SpaceGame` treats all four as
+   ordered launch-code steps -- since the physical button a player
+   presses always means the same color, not the same fixed action.
 2. In `game/world.py`, add it to the `self.rooms` dict in `World.__init__`
    (keyed by the room's `id` from `hub.py`).
 3. Flip that room's `"ready": False` to `True` in `game/hub.py`'s `ROOMS`
@@ -376,4 +397,7 @@ lab_game/
     garden_levels.py    Bug & Plant Lab level/recipe definitions + endless generator
     garden_ui.py        Bug & Plant Lab drawing code (pot, growing plant, water/sun)
     garden.py           Bug & Plant Lab's state machine (growing/success/fail)
+    space_levels.py     Space Lab launch-sequence definitions + endless generator
+    space_ui.py         Space Lab drawing code (rocket, launchpad, sequence card)
+    space.py            Space Lab's state machine (ready/success/fail)
 ```

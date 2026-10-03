@@ -10,6 +10,7 @@ from .app import Game
 from .garden import GardenGame
 from .input_manager import InputManager
 from .sound import SoundBank
+from .space import SpaceGame
 
 
 class World:
@@ -27,6 +28,7 @@ class World:
         self.rooms = {
             "chemistry": Game(screen, self.input, self.sound),
             "biology": GardenGame(screen, self.input, self.sound),
+            "space": SpaceGame(screen, self.input, self.sound),
         }
 
         self.mode = "hub"  # "hub" | a room id | "placeholder"

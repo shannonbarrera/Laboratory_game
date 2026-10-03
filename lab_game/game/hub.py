@@ -42,7 +42,7 @@ ROOMS = [
         "rect": pygame.Rect(362, 50, 300, 170),
         "open_side": "bottom",
         "icon": "star",
-        "ready": False,
+        "ready": True,
     },
     {
         "id": "physics",
