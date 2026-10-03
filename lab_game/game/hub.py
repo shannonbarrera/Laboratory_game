@@ -241,16 +241,67 @@ def draw_icon(surface, icon, center, color, scale=1.0):
         pygame.draw.rect(surface, config.NAVY, right_prong, width=max(1, round(2 * s)))
 
 
+PLAYER_SKIN = (250, 210, 170)
+PLAYER_HAIR = (205, 70, 40)
+PLAYER_COAT = (248, 250, 252)
+PLAYER_SHOE = (70, 75, 90)
+
+
 def _draw_player(surface, player):
+    """A little scientist in a lab coat: red hair, round glasses, a
+    simple two-frame walk cycle (legs and arms swing oppositely while
+    moving, from Player.bob, which only advances when actually walking)."""
     bob = math.sin(player.bob) * 2
-    x, y = int(player.x), int(player.y + bob)
-    r = config.PLAYER_RADIUS
+    step = math.sin(player.bob * 2)
+    fx = int(player.x)
+    fy = int(player.y + bob)  # feet/collision anchor; body extends upward
 
-    pygame.draw.circle(surface, (240, 248, 252), (x, y), r)
-    pygame.draw.circle(surface, config.NAVY, (x, y), r, width=3)
+    leg_w, leg_h = 7, 13
+    for side, phase in ((-1, step), (1, -step)):
+        leg_rect = pygame.Rect(0, 0, leg_w, leg_h)
+        leg_rect.midbottom = (fx + side * 6, fy + int(phase * 2))
+        pygame.draw.rect(surface, PLAYER_SHOE, leg_rect, border_radius=3)
 
-    # Little goggles, offset toward whichever way they're facing.
-    fx, fy = player.facing
-    offset_x = 4 if fx >= 0 else -4
-    pygame.draw.circle(surface, config.NAVY, (x - 6 + offset_x // 2, y - 2), 4, width=2)
-    pygame.draw.circle(surface, config.NAVY, (x + 6 + offset_x // 2, y - 2), 4, width=2)
+    torso_w = 30
+    torso_h = 30
+    torso_rect = pygame.Rect(0, 0, torso_w, torso_h)
+    torso_rect.midbottom = (fx, fy - leg_h + 4)
+    pygame.draw.rect(surface, PLAYER_COAT, torso_rect, border_radius=10)
+    pygame.draw.rect(surface, config.NAVY, torso_rect, width=3, border_radius=10)
+    pygame.draw.line(surface, config.NAVY,
+                      (fx, torso_rect.top + 6), (fx, torso_rect.bottom - 4), 2)
+    for i in range(2):
+        pygame.draw.circle(surface, config.NAVY, (fx, torso_rect.top + 13 + i * 9), 2)
+
+    arm_w, arm_h = 8, 22
+    for side, phase in ((-1, -step), (1, step)):
+        arm_rect = pygame.Rect(0, 0, arm_w, arm_h)
+        arm_rect.midtop = (fx + side * (torso_w // 2 + 2), torso_rect.top + 4 + int(phase * 2))
+        pygame.draw.rect(surface, PLAYER_COAT, arm_rect, border_radius=4)
+        pygame.draw.rect(surface, config.NAVY, arm_rect, width=2, border_radius=4)
+        pygame.draw.circle(surface, PLAYER_SKIN, arm_rect.midbottom, 4)
+
+    head_r = 11
+    head_x, head_y = fx, torso_rect.top - head_r + 2
+
+    # Hair peeks out from behind the head, plus a few spiky tufts on top.
+    hair_rect = pygame.Rect(0, 0, head_r * 2 + 6, head_r * 2 + 2)
+    hair_rect.center = (head_x, head_y - 2)
+    pygame.draw.ellipse(surface, PLAYER_HAIR, hair_rect)
+    for dx in (-6, 0, 6):
+        tip = (head_x + dx, head_y - head_r - 8)
+        pygame.draw.polygon(surface, PLAYER_HAIR, [
+            (head_x + dx - 3, head_y - head_r + 2),
+            (head_x + dx + 3, head_y - head_r + 2),
+            tip,
+        ])
+
+    pygame.draw.circle(surface, PLAYER_SKIN, (head_x, head_y), head_r)
+    pygame.draw.circle(surface, config.NAVY, (head_x, head_y), head_r, width=2)
+
+    gx, gy = head_x, head_y + 1
+    pygame.draw.circle(surface, config.NAVY, (gx - 5, gy), 4, width=2)
+    pygame.draw.circle(surface, config.NAVY, (gx + 5, gy), 4, width=2)
+    pygame.draw.line(surface, config.NAVY, (gx - 1, gy), (gx + 1, gy), 2)
+
+    pygame.draw.arc(surface, config.NAVY, (gx - 4, gy + 2, 8, 6), math.pi, 2 * math.pi, 2)
